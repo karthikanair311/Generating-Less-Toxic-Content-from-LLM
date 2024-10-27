@@ -1,0 +1,53 @@
+model_name: google-t5/t5-small
+dataset_name: knkarthick/dialogsum
+toxic_model_name: DaNLP/da-electra-hatespeech-detection
+toxic_label: offensive  # Adjust this based on your model's labels
+seed: 42
+
+# Configure LoRA for T5
+LoraConfig:
+  rank: 32  # Rank
+  lora_alpha: 32
+  target_modules:
+    - SelfAttention.q
+    - SelfAttention.k
+    - SelfAttention.v
+    - DenseReluDense.wi
+    - DenseReluDense.wo
+  bias: none
+  lora_dropout: 0.05
+  task_type: CAUSAL_LM
+
+peft_training_args:
+  output_dir: ./peft-dialogue-summary-training-{str(int(time.time()))}
+  warmup_steps: 1
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 4
+  max_steps: 1000
+  learning_rate: 2e-4
+  optim: paged_adamw_8bit  # Assuming "paged_adamw_8bit" is available
+  logging_steps: 25
+  logging_dir: ./logs
+  save_strategy: steps
+  save_steps: 25
+  evaluation_strategy: steps
+  eval_steps: 25
+  do_eval: True
+  gradient_checkpointing: True
+  report_to: none
+  overwrite_output_dir: True
+  group_by_length: True
+
+  
+bnb_config:
+  load_in_4bit: True
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_compute_dtype: $compute_dtype  # Assuming $compute_dtype is defined elsewhere
+  bnb_4bit_use_double_quant: False
+
+ppo_config:
+  learning_rate: 1.41e-5
+  max_ppo_epochs: 1
+  mini_batch_size: 4
+  batch_size: 16
+
